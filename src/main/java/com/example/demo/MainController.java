@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -14,12 +15,9 @@ public class MainController {
     private UserRepository userRepository;
 
     @PostMapping(path="/add")
-    public @ResponseBody String addNewUser (@RequestParam String name, @RequestParam String email) {
-        User n = new User();
-        n.setName(name);
-        n.setEmail(email);
-        userRepository.save(n);
-        return "Saved";
+    public @ResponseBody User addNewUser (@Valid @RequestBody User newUser) {
+        userRepository.save(newUser);
+        return newUser;
     }
 
     @GetMapping(path="/all")
@@ -28,36 +26,26 @@ public class MainController {
     }
 
     @GetMapping(path="/{id}")
-    public @ResponseBody Optional<User> getUserById(@PathVariable Integer id) {
-        return userRepository.findById(id);
+    public @ResponseBody User getUserById(@PathVariable Integer id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(id));
     }
 
     @PutMapping(path="/{id}")
-    public @ResponseBody String updateUser(@PathVariable Integer id, @RequestBody User updatedUser) {
-        // Find the existing user
-        Optional<User> existingUserOptional = userRepository.findById(id);
-
-        if (existingUserOptional.isPresent()) {
-            User existingUser = existingUserOptional.get();
-            // Update the user's name and email with the new values
-            existingUser.setName(updatedUser.getName());
-            existingUser.setEmail(updatedUser.getEmail());
-            // Save the updated user
-            userRepository.save(existingUser);
-            return "Updated";
-        } else {
-            return "User not found";
-        }
+    public @ResponseBody User updateUser(@PathVariable Integer id, @Valid @RequestBody User updatedUser) {
+        return userRepository.findById(id).map(user -> {
+            user.setName(updatedUser.getName());
+            user.setEmail(updatedUser.getEmail());
+            return userRepository.save(user);
+        }).orElseThrow(() -> new UserNotFoundException(id));
     }
 
     @DeleteMapping(path="/{id}")
-    public @ResponseBody String deleteUser(@PathVariable Integer id){
-        if (userRepository.existsById(id)){
-            userRepository.deleteById(id);
-            return "Deleted";
+    public @ResponseBody String deleteUser(@PathVariable Integer id) {
+        if (!userRepository.existsById(id)) {
+            throw new UserNotFoundException(id);
         }
-        else {
-            return "User not found";
-        }
+        userRepository.deleteById(id);
+        return "Deleted user with id " + id;
     }
 }
