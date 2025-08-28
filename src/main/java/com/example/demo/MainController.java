@@ -1,51 +1,47 @@
 package com.example.demo;
 
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
+import java.util.List;
 
-import java.util.Optional;
-
-@Controller
-@RequestMapping(path="/demo")
+@RestController
+@RequestMapping(path="/api/users")
 public class MainController {
 
     @Autowired
-    private UserRepository userRepository;
+    private UserService userService;
 
-    @PostMapping(path="/add")
-    public @ResponseBody User addNewUser (@Valid @RequestBody User newUser) {
-        userRepository.save(newUser);
-        return newUser;
+    @PostMapping
+    public User addNewUser (@Valid @RequestBody UserDTO newUserDTO) {
+        // Create a new User entity from the DTO
+        User newUser = new User();
+        newUser.setName(newUserDTO.getName());
+        newUser.setEmail(newUserDTO.getEmail());
+
+        return userService.saveUser(newUser);
     }
 
-    @GetMapping(path="/all")
-    public @ResponseBody Iterable<User> getAllUsers() {
-        return userRepository.findAll();
+    @GetMapping
+    public List<User> getAllUsers() {
+        return userService.findAllUsers();
     }
 
     @GetMapping(path="/{id}")
-    public @ResponseBody User getUserById(@PathVariable Integer id) {
-        return userRepository.findById(id)
+    public User getUserById(@PathVariable Integer id) {
+        return userService.findUserById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
     }
 
     @PutMapping(path="/{id}")
-    public @ResponseBody User updateUser(@PathVariable Integer id, @Valid @RequestBody User updatedUser) {
-        return userRepository.findById(id).map(user -> {
-            user.setName(updatedUser.getName());
-            user.setEmail(updatedUser.getEmail());
-            return userRepository.save(user);
-        }).orElseThrow(() -> new UserNotFoundException(id));
+    public User updateUser(@PathVariable Integer id, @Valid @RequestBody UserDTO updatedUserDTO) {
+        return userService.updateUser(id, updatedUserDTO);
     }
 
     @DeleteMapping(path="/{id}")
-    public @ResponseBody String deleteUser(@PathVariable Integer id) {
-        if (!userRepository.existsById(id)) {
-            throw new UserNotFoundException(id);
-        }
-        userRepository.deleteById(id);
+    public String deleteUser(@PathVariable Integer id) {
+        userService.deleteUser(id);
         return "Deleted user with id " + id;
     }
 }
