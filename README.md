@@ -1,4 +1,5 @@
-Spring Boot REST API
+##Spring Boot REST API
+
 This project is a simple but robust RESTful API built with Spring Boot. It demonstrates a complete user management system that follows modern best practices, including a service layer, Data Transfer Objects (DTOs), validation, and global exception handling.
 
 Features
